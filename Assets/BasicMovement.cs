@@ -10,7 +10,12 @@ public class BasicMovement : MonoBehaviour {
 	public float wallCheckDist = 0.75f;
 	public float groundCheckDist = 1.0f;
 
-	public float direction = 1.0f;
+	public float maxFallVelocity = -50.0f;
+	public float maxGlideVelocity = -20.0f;
+
+	public float maxVertVelocity;
+
+	float direction = 1.0f;
 
 	public Rigidbody2D body;
 
@@ -19,6 +24,7 @@ public class BasicMovement : MonoBehaviour {
 	enum State
 	{
 		OnGround,
+		Jumping,
 		Falling,
 		Gliding,
 		Sliding,
@@ -34,6 +40,8 @@ public class BasicMovement : MonoBehaviour {
 		if (srenderer == null) {
 			srenderer = GetComponent<SpriteRenderer> ();
 		}
+
+		maxVertVelocity = maxFallVelocity;
 	}
 	
 	// Update is called once per frame
@@ -45,6 +53,7 @@ public class BasicMovement : MonoBehaviour {
 		float lr = Input.GetAxis ("Horizontal") * speed;
 		bool sprintInput = Input.GetKeyDown (KeyCode.LeftShift);
 		bool jumpInput = Input.GetKeyDown (KeyCode.W);
+		bool glideInput = Input.GetKey (KeyCode.W);
 
 		if (sprintInput) {
 			lr *= sprint;
@@ -52,30 +61,47 @@ public class BasicMovement : MonoBehaviour {
 
 		float vertInput = body.velocity.y;
 
-		if (jumpInput) {
-			vertInput += jump;
-		}
-
-		body.velocity = new Vector2 (lr, vertInput);
 
 		if (lr > 0 && direction < 0 || lr < 0 && direction > 0) {
 			direction *= -1;
 		}
 
 		if (OnGround ()) {
+			if (jumpInput) {
+				vertInput += jump;
+			}
+
 			SetState (State.OnGround);
 		} else if (HittingWall ()) {
+			if (vertInput > 0) {
+				vertInput = 0;
+			}
 			SetState (State.Sliding);
+		} else if (vertInput > 0) {
+			SetState (State.Jumping);
+		} else if (vertInput < 0) {
+			if (glideInput) {
+				maxVertVelocity = maxGlideVelocity;
+				SetState (State.Gliding);
+			} else {
+				maxVertVelocity = maxFallVelocity;
+				SetState (State.Falling);
+			}
+			if (vertInput < maxVertVelocity) {
+				vertInput = maxVertVelocity;
+			}
 		} else {
 			SetState (State.Default);
 		}
+
+		body.velocity = new Vector2 (lr, vertInput);
 	}
 
 	bool HittingWall() {
 		RaycastHit2D cast = Physics2D.Raycast (transform.position, Vector2.right * direction, wallCheckDist);
 		Debug.DrawRay (transform.position, Vector2.right * direction * wallCheckDist, Color.green);
 		if (cast.collider != null) {
-			Debug.Log ("Wall raycast hitting: " + cast.collider.name);
+//			Debug.Log ("Wall raycast hitting: " + cast.collider.name);
 			if (cast.collider.tag == "Ground") {
 				return true;
 			}
@@ -87,7 +113,7 @@ public class BasicMovement : MonoBehaviour {
 		RaycastHit2D cast = Physics2D.Raycast (transform.position, -Vector2.up, groundCheckDist);
 		Debug.DrawRay (transform.position, -Vector2.up * groundCheckDist, Color.green);
 		if (cast.collider != null) {
-			Debug.Log ("Ground raycast hitting: " + cast.collider.name);
+//			Debug.Log ("Ground raycast hitting: " + cast.collider.name);
 			if (cast.collider.tag == "Ground") {
 				return true;
 			}
@@ -99,6 +125,9 @@ public class BasicMovement : MonoBehaviour {
 		switch (state) {
 		case State.OnGround:
 			srenderer.color = Color.red;
+			break;
+		case State.Jumping:
+			srenderer.color = Color.yellow;
 			break;
 		case State.Falling:
 			srenderer.color = Color.blue;

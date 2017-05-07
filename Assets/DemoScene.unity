@@ -304,7 +304,9 @@ MonoBehaviour:
   sprint: 2
   wallCheckDist: 0.75
   groundCheckDist: 1.2
-  direction: 1
+  maxFallVelocity: -30
+  maxGlideVelocity: -10
+  maxVertVelocity: 0
   body: {fileID: 0}
   srenderer: {fileID: 0}
 --- !u!61 &751647726
