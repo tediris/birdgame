@@ -6,6 +6,7 @@ public class BasicMovement : MonoBehaviour {
 
 	public float speed = 10.0f;
 	public float jump = 50.0f;
+	public float highJump = 70.0f;
 	public float sprint = 2.0f;
 	public float wallCheckDist = 0.75f;
 	public float groundCheckDist = 1.0f;
@@ -14,6 +15,10 @@ public class BasicMovement : MonoBehaviour {
 	public float maxGlideVelocity = -20.0f;
 
 	public float maxVertVelocity;
+
+	public float longPressTime = 0.2f;
+	public float lastJumpPress;
+	bool canHighJump = true;
 
 	float direction = 1.0f;
 
@@ -25,6 +30,7 @@ public class BasicMovement : MonoBehaviour {
 	{
 		OnGround,
 		Jumping,
+		HighJumping,
 		Falling,
 		Gliding,
 		Sliding,
@@ -69,6 +75,8 @@ public class BasicMovement : MonoBehaviour {
 		if (OnGround ()) {
 			if (jumpInput) {
 				vertInput += jump;
+				lastJumpPress = Time.fixedTime;
+				canHighJump = true;
 			}
 
 			SetState (State.OnGround);
@@ -78,7 +86,16 @@ public class BasicMovement : MonoBehaviour {
 			}
 			SetState (State.Sliding);
 		} else if (vertInput > 0) {
-			SetState (State.Jumping);
+			if (glideInput && Time.fixedTime > lastJumpPress + longPressTime && canHighJump) {
+				vertInput += highJump;
+				canHighJump = false;
+				SetState (State.HighJumping);
+			} else {
+				if (!glideInput) {
+					canHighJump = false;
+				}
+				SetState (State.Jumping);
+			}
 		} else if (vertInput < 0) {
 			if (glideInput) {
 				maxVertVelocity = maxGlideVelocity;
@@ -128,6 +145,9 @@ public class BasicMovement : MonoBehaviour {
 			break;
 		case State.Jumping:
 			srenderer.color = Color.yellow;
+			break;
+		case State.HighJumping:
+			srenderer.color = Color.white;
 			break;
 		case State.Falling:
 			srenderer.color = Color.blue;

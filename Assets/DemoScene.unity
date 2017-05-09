@@ -301,12 +301,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 10
   jump: 8
+  highJump: 10
   sprint: 2
   wallCheckDist: 0.75
   groundCheckDist: 1.2
   maxFallVelocity: -30
   maxGlideVelocity: -10
   maxVertVelocity: 0
+  longPressTime: 0.4
+  lastJumpPress: 0
   body: {fileID: 0}
   srenderer: {fileID: 0}
 --- !u!61 &751647726
